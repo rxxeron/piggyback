@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  piggyback-web:
+    build: .
+    container_name: piggyback-web
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_ENABLE_CORS=false
+      - STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false

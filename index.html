@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piggyback — Invisible Payload Carrier & Algorithm Workbench [ICE245]</title>
+    <style>
+        :root {
+            --bg-primary: #0F172A;
+            --bg-secondary: #1E293B;
+            --bg-input: #0B0F19;
+            --border: #334155;
+            --border-focus: #38BDF8;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --accent-blue: #0284C7;
+            --accent-blue-hover: #0369A1;
+            --accent-green: #059669;
+            --accent-green-hover: #047857;
+            --accent-amber: #D97706;
+            --font-mono: "Consolas", "Fira Code", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 16px;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #38BDF8;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .badge-domain {
+            background: #0B0F19;
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: #38BDF8;
+        }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex;
+            gap: 2px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-bottom: none;
+            color: var(--text-muted);
+            padding: 8px 18px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.15s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: #334155;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-primary);
+            color: #38BDF8;
+            border-top: 2px solid var(--accent-blue);
+            margin-bottom: -1px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Layout Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #38BDF8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Form Controls */
+        textarea, input[type="text"] {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            padding: 8px;
+            resize: vertical;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--border-focus);
+        }
+
+        button {
+            background: var(--accent-blue);
+            color: #FFFFFF;
+            border: 1px solid var(--accent-blue-hover);
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        button:hover {
+            background: var(--accent-blue-hover);
+        }
+
+        button.btn-secondary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: #CBD5E1;
+        }
+
+        button.btn-secondary:hover {
+            background: #334155;
+            color: #FFFFFF;
+        }
+
+        button.btn-success {
+            background: var(--accent-green);
+            border: 1px solid var(--accent-green-hover);
+        }
+
+        button.btn-success:hover {
+            background: var(--accent-green-hover);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            padding: 3px 8px;
+            font-size: 11px;
+            background: #1E293B;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 3px;
+        }
+
+        .preset-btn:hover {
+            color: var(--text-main);
+            border-color: #475569;
+        }
+
+        /* Metric Grid */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 600px) {
+            .metric-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .metric-box {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .metric-val {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: #38BDF8;
+        }
+
+        .metric-lbl {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            margin-top: 8px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 5px 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #111827;
+            color: var(--text-muted);
+            font-family: -apple-system, sans-serif;
+            font-weight: 600;
+        }
+
+        /* Status Banners */
+        .banner {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            margin-top: 8px;
+        }
+
+        .banner-success {
+            background: #064E3B;
+            border: 1px solid var(--accent-green);
+            color: #34D399;
+        }
+
+        .banner-warn {
+            background: #451A03;
+            border: 1px solid var(--accent-amber);
+            color: #FBBF24;
+        }
+
+        .banner-info {
+            background: #0B0F19;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        /* Tree Canvas */
+        #treeCanvas {
+            width: 100%;
+            height: 380px;
+            background: #0B0F19;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        /* Image Dropzone */
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: 4px;
+            padding: 16px;
+            text-align: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            margin: 8px 0;
+            background: var(--bg-input);
+            font-family: var(--font-mono);
+            font-size: 11px;
+        }
+
+        .dropzone:hover {
+            border-color: var(--border-focus);
+            color: #38BDF8;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Piggyback</h1>
+            <div class="subtitle">Invisible Payload Carrier & Algorithm Workbench [ICE245 Algorithm Design]</div>
+        </div>
+        <div class="badge-domain">HOST: hm.rxxeron.iam.bd</div>
+    </header>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab(0)">Standard Huffman (Text)</button>
+        <button class="tab-btn" onclick="switchTab(1)">Steganography: Embed Carrier</button>
+        <button class="tab-btn" onclick="switchTab(2)">Steganography: Extract Payload</button>
+        <button class="tab-btn" onclick="switchTab(3)">Priority Queue Visualizer</button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 1: STANDARD HUFFMAN (TEXT)             -->
+    <!-- ========================================== -->
+    <div id="tab0" class="tab-content active">
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <div class="card-title">1. Plaintext Input Payload</div>
+                    <textarea id="textInput" rows="4">BEEP BOOP BEER! Huffman coding achieves optimal prefix codes.</textarea>
+                    <div class="btn-group">
+                        <button class="preset-btn" onclick="setPreset('ABRACADABRA')">ABRACADABRA</button>
+                        <button class="preset-btn" onclick="setPreset('The greedy choice property ensures optimal prefix codes.')">Greedy Choice</button>
+                        <button class="preset-btn" onclick="setPreset('আমাদের অ্যালগরিদম সফলভাবে বাংলায় কাজ করছে।')">Bangla Unicode</button>
+                    </div>
+                    <div id="textInputMeta" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin: 6px 0;">Length: 0 chars | UTF-8: 0 bytes</div>
+                    <button style="width: 100%; margin-top: 6px;" onclick="executeHuffmanEncode()">Compress (Encode Payload &rarr; Bitstream)</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">2. Huffman Encoded Bitstream [0/1 Payload]</div>
+                    <textarea id="bitsOutput" rows="4" placeholder="Compressed binary bitstream will appear here..."></textarea>
+                    <div class="btn-group">
+                        <button class="btn-secondary" onclick="copyBits()">Copy Bitstream</button>
+                        <button class="btn-success" onclick="executeHuffmanDecode()">Decompress (Decode Bitstream &rarr; Text)</button>
+                    </div>
+                    <div id="decodedBanner" class="banner banner-info" style="margin-top: 10px;">Decoded Payload: [Awaiting decompression]</div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-title">Information Theory & Compression Metrics</div>
+                    <div class="metric-grid">
+                        <div class="metric-box">
+                            <div class="metric-val" id="metricRatio">-</div>
+                            <div class="metric-lbl">Ratio</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-val" id="metricSavings">-</div>
+                            <div class="metric-lbl">Savings</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-val" id="metricEntropy">-</div>
+                            <div class="metric-lbl">Entropy H(X)</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-val" id="metricEfficiency">-</div>
+                            <div class="metric-lbl">Efficiency</div>
+                        </div>
+                    </div>
+                    <div id="statDetails" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 6px;"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Prefix-Free Codebook</div>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table id="codeTable">
+                            <thead>
+                                <tr><th>Byte</th><th>Symbol</th><th>Binary Prefix Code</th><th>Bits</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: STEGANOGRAPHY: EMBED                -->
+    <!-- ========================================== -->
+    <div id="tab1" class="tab-content">
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <div class="card-title">1. Secret Payload Message</div>
+                    <textarea id="stegoPayload" rows="3">Piggyback secret payload: আমাদের গোপন তথ্য ছবির মধ্যে নিরাপদে লুকানো হয়েছে।</textarea>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">2. Carrier Image (PNG / BMP / Lossless)</div>
+                    <div class="dropzone" onclick="document.getElementById('fileCover').click()">
+                        Click to Select Carrier Image or Drag File Here
+                    </div>
+                    <input type="file" id="fileCover" accept="image/png,image/bmp,image/jpeg" style="display: none;" onchange="handleCarrierUpload(event)">
+                    <div id="carrierMeta" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">No carrier loaded.</div>
+                    <button style="width: 100%; margin-top: 10px;" onclick="executeStegoEmbed()">Embed Payload into Carrier</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-title">Steganographic Carrier Preview & Proof</div>
+                    <div class="metric-grid">
+                        <div class="metric-box">
+                            <div class="metric-val" id="stegoPSNR">-</div>
+                            <div class="metric-lbl">PSNR (dB)</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-val" id="stegoMSE">-</div>
+                            <div class="metric-lbl">MSE Variance</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-val" id="stegoModified">-</div>
+                            <div class="metric-lbl">Pixels Altered</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-val" id="stegoCapacity">-</div>
+                            <div class="metric-lbl">Capacity Usage</div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <canvas id="stegoCanvas" style="max-width: 100%; height: auto; max-height: 220px; border: 1px solid var(--border); border-radius: 4px;"></canvas>
+                    </div>
+                    <div class="btn-group" style="justify-content: center; margin-top: 8px;">
+                        <button id="btnDownloadStego" class="btn-success" style="display: none;" onclick="downloadStegoImage()">Download Stego Carrier PNG</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: STEGANOGRAPHY: EXTRACT              -->
+    <!-- ========================================== -->
+    <div id="tab2" class="tab-content">
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <div class="card-title">1. Inspect Stego Carrier Image</div>
+                    <div class="dropzone" onclick="document.getElementById('fileInspect').click()">
+                        Click to Upload Stego Carrier PNG to Inspect
+                    </div>
+                    <input type="file" id="fileInspect" accept="image/png" style="display: none;" onchange="handleInspectUpload(event)">
+                    <div id="inspectAuthBadge" class="banner banner-info">STATUS: Awaiting input image...</div>
+                    <button style="width: 100%; margin-top: 10px;" class="btn-success" onclick="executeStegoExtract()">Extract & Decode Payload</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-title">2. Recovered Secret Payload</div>
+                    <textarea id="extractedOutput" rows="6" readonly placeholder="Extracted plaintext will appear here upon decoding..."></textarea>
+                    <div id="extractTelemetry" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 8px;">Telemetry inactive.</div>
+                    <button class="btn-secondary" style="margin-top: 8px;" onclick="copyExtracted()">Copy Payload to Clipboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: PRIORITY QUEUE TREE VISUALIZER      -->
+    <!-- ========================================== -->
+    <div id="tab3" class="tab-content">
+        <div class="card">
+            <div class="card-title">Greedy Priority Queue Tree Assembly</div>
+            <canvas id="treeCanvas"></canvas>
+            <div id="treeHud" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 8px;">Rendered via HTML5 Canvas</div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Switching
+        function switchTab(index) {
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === index));
+            document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
+            if (index === 3) drawTreeCanvas();
+        }
+
+        function setPreset(txt) {
+            document.getElementById('textInput').value = txt;
+            updateInputMeta();
+            executeHuffmanEncode();
+        }
+
+        function updateInputMeta() {
+            const txt = document.getElementById('textInput').value;
+            const bytes = new TextEncoder().encode(txt);
+            document.getElementById('textInputMeta').innerText = `Length: ${txt.length} chars | UTF-8: ${bytes.length} bytes`;
+        }
+
+        document.getElementById('textInput').addEventListener('input', updateInputMeta);
+
+        // ==========================================
+        // HUFFMAN ENGINE (UTF-8 BYTE LEVEL)
+        // ==========================================
+        class HuffmanNode {
+            constructor(freq, byteVal = null, left = null, right = null) {
+                this.freq = freq;
+                this.byteVal = byteVal;
+                this.left = left;
+                this.right = right;
+            }
+            get isLeaf() { return this.byteVal !== null; }
+        }
+
+        let activeRoot = null;
+        let activeCodes = {};
+
+        function buildHuffmanTree(bytes) {
+            const freqMap = {};
+            for (let b of bytes) freqMap[b] = (freqMap[b] || 0) + 1;
+
+            let heap = Object.entries(freqMap).map(([b, f]) => new HuffmanNode(f, parseInt(b)));
+            heap.sort((a, b) => a.freq - b.freq);
+
+            if (heap.length === 1) {
+                activeRoot = heap[0];
+                activeCodes = { [heap[0].byteVal]: "0" };
+                return activeRoot;
+            }
+
+            while (heap.length > 1) {
+                heap.sort((a, b) => a.freq - b.freq);
+                const left = heap.shift();
+                const right = heap.shift();
+                const parent = new HuffmanNode(left.freq + right.freq, null, left, right);
+                heap.push(parent);
+            }
+
+            activeRoot = heap[0];
+            activeCodes = {};
+            function genCodes(node, code) {
+                if (!node) return;
+                if (node.isLeaf) {
+                    activeCodes[node.byteVal] = code || "0";
+                    return;
+                }
+                genCodes(node.left, code + "0");
+                genCodes(node.right, code + "1");
+            }
+            genCodes(activeRoot, "");
+            return activeRoot;
+        }
+
+        function serializeTree(node, bits = []) {
+            if (!node) return;
+            if (node.isLeaf) {
+                bits.push("1");
+                bits.push(node.byteVal.toString(2).padStart(8, "0"));
+            } else {
+                bits.push("0");
+                serializeTree(node.left, bits);
+                serializeTree(node.right, bits);
+            }
+            return bits.join("");
+        }
+
+        function deserializeTree(bits, state = { pos: 0 }) {
+            if (state.pos >= bits.length) return null;
+            if (bits[state.pos] === "1") {
+                const byteVal = parseInt(bits.substr(state.pos + 1, 8), 2);
+                state.pos += 9;
+                return new HuffmanNode(0, byteVal);
+            } else {
+                state.pos += 1;
+                const left = deserializeTree(bits, state);
+                const right = deserializeTree(bits, state);
+                return new HuffmanNode(0, null, left, right);
+            }
+        }
+
+        function executeHuffmanEncode() {
+            const text = document.getElementById('textInput').value;
+            if (!text) return;
+
+            const bytes = new TextEncoder().encode(text);
+            buildHuffmanTree(bytes);
+
+            let payloadBits = "";
+            for (let b of bytes) payloadBits += activeCodes[b];
+
+            const treeBits = serializeTree(activeRoot, []);
+            document.getElementById('bitsOutput').value = payloadBits;
+
+            // Stats
+            const totalBits = payloadBits.length + treeBits.length + 64;
+            const origBits = bytes.length * 8;
+            const ratio = (origBits / Math.max(1, totalBits)).toFixed(2);
+            const savings = Math.max(0, ((1 - totalBits / Math.max(1, origBits)) * 100)).toFixed(1);
+
+            // Shannon Entropy
+            let entropy = 0;
+            const n = bytes.length;
+            const counts = {};
+            for (let b of bytes) counts[b] = (counts[b] || 0) + 1;
+            for (let b in counts) {
+                let p = counts[b] / n;
+                entropy -= p * Math.log2(p);
+            }
+
+            document.getElementById('metricRatio').innerText = ratio + "x";
+            document.getElementById('metricSavings').innerText = savings + "%";
+            document.getElementById('metricEntropy').innerText = entropy.toFixed(2) + " b/B";
+            document.getElementById('metricEfficiency').innerText = ((entropy / (payloadBits.length / n)) * 100).toFixed(1) + "%";
+
+            // Code Table
+            const tbody = document.querySelector('#codeTable tbody');
+            tbody.innerHTML = "";
+            const sortedCodes = Object.entries(activeCodes).sort((a, b) => a[1].length - b[1].length);
+            for (let [b, code] of sortedCodes) {
+                const bVal = parseInt(b);
+                const sym = (bVal >= 32 && bVal <= 126) ? String.fromCharCode(bVal) : `0x${bVal.toString(16).toUpperCase()}`;
+                tbody.innerHTML += `<tr><td>0x${bVal.toString(16).toUpperCase().padStart(2, '0')}</td><td>${sym}</td><td>${code}</td><td>${code.length}</td></tr>`;
+            }
+
+            drawTreeCanvas();
+        }
+
+        function executeHuffmanDecode() {
+            const bits = document.getElementById('bitsOutput').value.trim();
+            if (!bits || !activeRoot) return;
+
+            let curr = activeRoot;
+            let decodedBytes = [];
+            for (let bit of bits) {
+                curr = (bit === "0") ? curr.left : curr.right;
+                if (!curr) break;
+                if (curr.isLeaf) {
+                    decodedBytes.push(curr.byteVal);
+                    curr = activeRoot;
+                }
+            }
+
+            const decodedText = new TextDecoder().decode(new Uint8Array(decodedBytes));
+            const banner = document.getElementById('decodedBanner');
+            banner.className = "banner banner-success";
+            banner.innerText = `DECODED PAYLOAD: "${decodedText}"`;
+        }
+
+        function copyBits() {
+            navigator.clipboard.writeText(document.getElementById('bitsOutput').value);
+            alert("Bitstream copied to clipboard!");
+        }
+
+        // ==========================================
+        // STEGANOGRAPHY ENGINE (CANVAS LSB)
+        // ==========================================
+        let carrierImg = null;
+
+        function handleCarrierUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    carrierImg = img;
+                    document.getElementById('carrierMeta').innerText = `Carrier: ${file.name} (${img.width}x${img.height} px, ${(img.width*img.height*3).toLocaleString()} usable bits)`;
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function executeStegoEmbed() {
+            if (!carrierImg) {
+                alert("Please select a carrier image first.");
+                return;
+            }
+            const text = document.getElementById('stegoPayload').value.trim();
+            if (!text) return;
+
+            const bytes = new TextEncoder().encode(text);
+            buildHuffmanTree(bytes);
+
+            let payloadBits = "";
+            for (let b of bytes) payloadBits += activeCodes[b];
+            const treeBits = serializeTree(activeRoot, []);
+
+            // Packet construction
+            const MAGIC = "0101001101010100"; // 0x5354 ('ST')
+            const treeLenBits = treeBits.length.toString(2).padStart(16, "0");
+            const payloadLenBits = payloadBits.length.toString(2).padStart(32, "0");
+            const fullPacket = MAGIC + treeLenBits + treeBits + payloadLenBits + payloadBits;
+
+            const canvas = document.getElementById('stegoCanvas');
+            canvas.width = carrierImg.width;
+            canvas.height = carrierImg.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(carrierImg, 0, 0);
+
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+
+            if (fullPacket.length > (data.length / 4) * 3) {
+                alert("Payload exceeds carrier capacity!");
+                return;
+            }
+
+            let bitIdx = 0;
+            let modified = 0;
+            let sqErr = 0;
+
+            for (let i = 0; i < data.length && bitIdx < fullPacket.length; i++) {
+                if ((i + 1) % 4 === 0) continue; // Skip Alpha
+                const origVal = data[i];
+                const bit = parseInt(fullPacket[bitIdx]);
+                const newVal = (origVal & 0xFE) | bit;
+                if (newVal !== origVal) modified++;
+                sqErr += (newVal - origVal) * (newVal - origVal);
+                data[i] = newVal;
+                bitIdx++;
+            }
+
+            ctx.putImageData(imgData, 0, 0);
+
+            const totalChannels = (canvas.width * canvas.height * 3);
+            const mse = sqErr / totalChannels;
+            const psnr = (mse === 0) ? 99.9 : (10 * Math.log10((255 * 255) / mse)).toFixed(2);
+
+            document.getElementById('stegoPSNR').innerText = psnr + " dB";
+            document.getElementById('stegoMSE').innerText = mse.toFixed(5);
+            document.getElementById('stegoModified').innerText = modified.toLocaleString();
+            document.getElementById('stegoCapacity').innerText = ((fullPacket.length / totalChannels) * 100).toFixed(2) + "%";
+
+            document.getElementById('btnDownloadStego').style.display = "inline-block";
+        }
+
+        function downloadStegoImage() {
+            const canvas = document.getElementById('stegoCanvas');
+            const link = document.createElement('a');
+            link.download = 'piggyback_stego.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Stego Extract
+        let inspectImg = null;
+        function handleInspectUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    inspectImg = img;
+                    document.getElementById('inspectAuthBadge').className = "banner banner-info";
+                    document.getElementById('inspectAuthBadge').innerText = `Loaded: ${file.name} (${img.width}x${img.height} px)`;
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function executeStegoExtract() {
+            if (!inspectImg) {
+                alert("Please select a stego image to inspect.");
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = inspectImg.width;
+            canvas.height = inspectImg.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(inspectImg, 0, 0);
+
+            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let bits = "";
+            for (let i = 0; i < data.length && bits.length < 80000; i++) {
+                if ((i + 1) % 4 === 0) continue;
+                bits += (data[i] & 1).toString();
+            }
+
+            const MAGIC = "0101001101010100";
+            if (bits.substr(0, 16) !== MAGIC) {
+                document.getElementById('inspectAuthBadge').className = "banner banner-warn";
+                document.getElementById('inspectAuthBadge').innerText = "WARNING: Missing Piggyback Magic Watermark (0x5354).";
+                return;
+            }
+
+            document.getElementById('inspectAuthBadge').className = "banner banner-success";
+            document.getElementById('inspectAuthBadge').innerText = "AUTHENTICATED: Valid Piggyback Watermark Header Found (0x5354)";
+
+            const treeLen = parseInt(bits.substr(16, 16), 2);
+            const treeBits = bits.substr(32, treeLen);
+            const payloadLenPos = 32 + treeLen;
+            const payloadLen = parseInt(bits.substr(payloadLenPos, 32), 2);
+            const payloadBits = bits.substr(payloadLenPos + 32, payloadLen);
+
+            const root = deserializeTree(treeBits);
+            let curr = root;
+            let decodedBytes = [];
+            for (let b of payloadBits) {
+                curr = (b === "0") ? curr.left : curr.right;
+                if (!curr) break;
+                if (curr.isLeaf) {
+                    decodedBytes.push(curr.byteVal);
+                    curr = root;
+                }
+            }
+
+            const decodedText = new TextDecoder().decode(new Uint8Array(decodedBytes));
+            document.getElementById('extractedOutput').value = decodedText;
+            document.getElementById('extractTelemetry').innerText = `Extracted: ${decodedText.length} chars | Tree Header: ${treeLen} bits | Payload: ${payloadLen} bits`;
+        }
+
+        function copyExtracted() {
+            navigator.clipboard.writeText(document.getElementById('extractedOutput').value);
+            alert("Payload copied to clipboard!");
+        }
+
+        // ==========================================
+        // TREE CANVAS RENDERER
+        // ==========================================
+        function drawTreeCanvas() {
+            const canvas = document.getElementById('treeCanvas');
+            canvas.width = canvas.parentElement.clientWidth - 28;
+            canvas.height = 360;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "#0B0F19";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!activeRoot) {
+                ctx.fillStyle = "#64748B";
+                ctx.font = "12px Consolas";
+                ctx.textAlign = "center";
+                ctx.fillText("No tree built yet. Run compression in Tab 1.", canvas.width / 2, canvas.height / 2);
+                return;
+            }
+
+            // Simple hierarchical layout
+            let leafCount = 0;
+            function countLeaves(node) {
+                if (!node) return 0;
+                if (node.isLeaf) return 1;
+                return countLeaves(node.left) + countLeaves(node.right);
+            }
+            const totalLeaves = countLeaves(activeRoot);
+            const leafSpacing = Math.min(60, canvas.width / (totalLeaves + 1));
+            let currLeafX = leafSpacing;
+
+            function assignCoords(node, depth) {
+                if (!node) return null;
+                const y = 40 + depth * 55;
+                if (node.isLeaf) {
+                    const x = currLeafX;
+                    currLeafX += leafSpacing;
+                    return { x, y, node };
+                }
+                const left = assignCoords(node.left, depth + 1);
+                const right = assignCoords(node.right, depth + 1);
+                const x = (left.x + right.x) / 2;
+                return { x, y, node, left, right };
+            }
+
+            const treeLayout = assignCoords(activeRoot, 0);
+
+            // Draw edges
+            function drawEdges(t) {
+                if (!t || t.node.isLeaf) return;
+                ctx.strokeStyle = "#334155";
+                ctx.lineWidth = 1.5;
+
+                if (t.left) {
+                    ctx.beginPath();
+                    ctx.moveTo(t.x, t.y);
+                    ctx.lineTo(t.left.x, t.left.y);
+                    ctx.stroke();
+                    drawEdges(t.left);
+                }
+                if (t.right) {
+                    ctx.beginPath();
+                    ctx.moveTo(t.x, t.y);
+                    ctx.lineTo(t.right.x, t.right.y);
+                    ctx.stroke();
+                    drawEdges(t.right);
+                }
+            }
+            drawEdges(treeLayout);
+
+            // Draw nodes
+            function drawNodes(t) {
+                if (!t) return;
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, 16, 0, Math.PI * 2);
+                ctx.fillStyle = t.node.isLeaf ? "#0F172A" : "#1E293B";
+                ctx.fill();
+                ctx.strokeStyle = t.node.isLeaf ? "#38BDF8" : "#34D399";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.fillStyle = "#F8FAFC";
+                ctx.font = "10px Consolas";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                if (t.node.isLeaf) {
+                    const b = t.node.byteVal;
+                    const sym = (b >= 32 && b <= 126) ? String.fromCharCode(b) : `0x${b.toString(16).toUpperCase()}`;
+                    ctx.fillText(sym, t.x, t.y);
+                } else {
+                    ctx.fillText("Σ=" + t.node.freq, t.x, t.y);
+                }
+
+                if (t.left) drawNodes(t.left);
+                if (t.right) drawNodes(t.right);
+            }
+            drawNodes(treeLayout);
+        }
+
+        // Initial run
+        updateInputMeta();
+        executeHuffmanEncode();
+    </script>
+</body>
+</html>
