@@ -804,14 +804,31 @@
             ctx.drawImage(inspectImg, 0, 0);
 
             const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            const MAGIC = "0101001101010100";
             let bits = "";
-            for (let i = 0; i < data.length && bits.length < 80000; i++) {
+            let neededBits = 32; // MAGIC (16b) + treeLen (16b)
+
+            for (let i = 0; i < data.length; i++) {
                 if ((i + 1) % 4 === 0) continue;
                 bits += (data[i] & 1).toString();
+
+                if (bits.length === 32) {
+                    if (bits.substr(0, 16) !== MAGIC) break;
+                    const treeLen = parseInt(bits.substr(16, 16), 2);
+                    neededBits = 32 + treeLen + 32; // up to payloadLen header
+                } else if (bits.length === neededBits && neededBits > 32) {
+                    const treeLen = parseInt(bits.substr(16, 16), 2);
+                    const payloadLenPos = 32 + treeLen;
+                    const payloadLen = parseInt(bits.substr(payloadLenPos, 32), 2);
+                    neededBits = payloadLenPos + 32 + payloadLen;
+                }
+
+                if (neededBits > 64 && bits.length >= neededBits) {
+                    break;
+                }
             }
 
-            const MAGIC = "0101001101010100";
-            if (bits.substr(0, 16) !== MAGIC) {
+            if (bits.length < 16 || bits.substr(0, 16) !== MAGIC) {
                 document.getElementById('inspectAuthBadge').className = "banner banner-warn";
                 document.getElementById('inspectAuthBadge').innerText = "WARNING: Missing Piggyback Magic Watermark (0x5354).";
                 return;
